@@ -10,6 +10,7 @@
 #include "slcan.h"
 #include "system.h"
 #include "led.h"
+#include "usb.h"
 
 
 int main(void)
@@ -32,24 +33,26 @@ int main(void)
 
     while(1)
     {
-        // Block until a CAN message is recieved
-        while (!is_can_msg_pending(CAN_FIFO0))
-            led_process();
-
-        status = can_rx(&rx_msg, 3);
-
-        // If message received from bus, parse the frame
-        if (status == HAL_OK)
-        {
-            msg_len = slcan_parse_frame((uint8_t *)&msg_buf, &rx_msg);
-
-            // Transmit message via USB-CDC 
-            if(msg_len)
+        // Check if a CAN message was recieved
+        if (is_can_msg_pending(CAN_FIFO0)) {
+            status = can_rx(&rx_msg, 3);
+            
+            // If message received from bus, parse the frame
+            if (status == HAL_OK)
             {
-                CDC_Transmit_FS(msg_buf, msg_len);
+                msg_len = slcan_parse_frame((uint8_t *)&msg_buf, &rx_msg);
+                
+                // Transmit message via USB-CDC 
+                if(msg_len)
+                {
+                    CDC_Transmit_FS(msg_buf, msg_len);
+                }
             }
         }
-
+        
+        // Send any data queued in interrupts
+        usb_flush();
+        
         led_process();
     }
 }

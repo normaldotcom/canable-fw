@@ -6,7 +6,7 @@
 #include "can.h"
 #include "slcan.h"
 #include "string.h"
-#include "usbd_cdc_if.h"
+#include "usb.h"
 
 
 // Parse an incoming CAN frame into an outgoing slcan message
@@ -80,7 +80,7 @@ int8_t slcan_parse_frame(uint8_t *buf, CanRxMsgTypeDef *frame)
 }
 
 
-// Parse an incoming slcan command from the USB CDC port
+// Parse an incoming slcan command from the USB CDC port and transmit it
 int8_t slcan_parse_str(uint8_t *buf, uint8_t len)
 {
     CanTxMsgTypeDef frame;
@@ -175,7 +175,7 @@ int8_t slcan_parse_str(uint8_t *buf, uint8_t len)
     } else if (buf[0] == 'v' || buf[0] == 'V') {
         // Report firmware version and remote
         char* fw_id = GIT_VERSION " " GIT_REMOTE "\r";
-        CDC_Transmit_FS((uint8_t*)fw_id, strlen(fw_id));
+        usb_queue_msg_tx_from_interrupt((uint8_t*)fw_id, strlen(fw_id));
         return 0;
 
     } else if (buf[0] == 't' || buf[0] == 'T') {

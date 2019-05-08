@@ -50,6 +50,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc_if.h"
 #include "slcan.h"
+#include "usb.h"
 
 /* USER CODE BEGIN INCLUDE */
 
@@ -308,15 +309,16 @@ static int8_t CDC_Receive_FS (uint8_t* Buf, uint32_t *Len)
 
     for (i = 0; i < n; i++)
     {
+       // Check for end of slcan command
        if (Buf[i] == '\r') {
            int result = slcan_parse_str(slcan_str, slcan_str_index);
 
            // Success
-           //if(result == 0)
-           //    CDC_Transmit_FS("\n", 1); 
+           if(result == 0)
+              usb_queue_msg_tx_from_interrupt((uint8_t*)"\r", 1); 
            // Failure
-           //else
-           //    CDC_Transmit_FS("\a", 1);
+           else
+              usb_queue_msg_tx_from_interrupt((uint8_t*)"\a", 1);
 
            slcan_str_index = 0;
        } else {
